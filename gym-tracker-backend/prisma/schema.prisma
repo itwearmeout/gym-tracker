@@ -1,0 +1,89 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tokens       RefreshToken[]
+  revokedTokens RevokedToken[]
+  exercises    Exercise[]
+  workouts     WorkoutLog[]
+  oneRepMaxes  OneRepMax[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model RateLimit {
+  id        String   @id @default(uuid())
+  identifier String   // Can store an IP address or a User ID
+  endpoint   String
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, endpoint, createdAt])
+}
+
+model RevokedToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  tokenType String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, tokenType, createdAt])
+}
+
+model Exercise {
+  id          String        @id @default(uuid())
+  name        String
+  category    String        // e.g., 'Chest', 'Legs'
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime      @default(now())
+
+  workoutLogs WorkoutLog[]
+  oneRepMaxes OneRepMax[]
+
+  @@unique([name, userId])
+}
+
+model WorkoutLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  sets       Int
+  reps       Int
+  weight     Float
+  date       DateTime @default(now())
+}
+
+model OneRepMax {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  weight     Float
+  date       DateTime @default(now())
+}
