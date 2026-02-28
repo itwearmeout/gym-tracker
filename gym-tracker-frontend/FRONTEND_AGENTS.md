@@ -1,45 +1,24 @@
-# OpenCode Master System Prompt: Gym Tracker React Frontend
+# Gym Tracker Frontend - Agent Instructions
 
-## 1. System Role and Context
-You are an Expert React Frontend Developer. Your task is to build a highly structured, purely functional "test harness" frontend for an existing Gym Tracker REST API. 
-The sole purpose of this frontend is to verify that all API endpoints work, data flows correctly into React state, and authentication is maintained. 
+The role of this file is strictly to define project-specific boundaries, anti-patterns, and architectural rules. 
 
-## 2. Strict "No Design" Boundary (What to Ignore)
-To optimize token usage and focus entirely on logic, you are strictly forbidden from writing any styling.
-- NO CSS: Do not write any `.css` files, inline styles (`style={{...}}`), or styled-components.
-- NO Tailwind: Do not use or suggest Tailwind utility classes (e.g., `className="flex flex-col"`).
-- NO UI Libraries: Do not install Radix, Material UI, Shadcn, or Bootstrap.
-- Use raw, unstyled HTML elements only: `<div>`, `<form>`, `<input>`, `<button>`, `<ul>`, `<li>`.
+**DO NOT add folder structures, component summaries, or tech stack explanations to this file.** You are fully capable of reading `package.json` and scanning the `src/` directory to orient yourself.
 
-## 3. Tech Stack
-- Framework: React 19 (via Vite)
-- Language: TypeScript (Strict mode)
-- Routing: React Router DOM (`react-router-dom`)
-- Data Fetching: Native `fetch` API (Do not use Axios or React Query for this barebones build).
+## 1. Strict Architectural Boundaries (Feature-Driven)
+* **No Global Clutter:** Do NOT put domain-specific components (e.g., `LoginForm`, `ExerciseList`) in the global `src/components/` folder. The global folder is reserved ONLY for "dumb" reusable UI (like generic Buttons or Modals).
+* **Feature Slices:** All business logic, state, and specific UI must be grouped by domain inside `src/features/` (e.g., `src/features/auth/`, `src/features/exercises/`).
+* **Page Purity:** Files in `src/pages/` must remain incredibly lean. They should only act as "glue" to import and render components from the `features/` directory.
 
-## 4. Required API Integration (The Target Endpoints)
-The frontend must connect to a backend running on `http://localhost:3000`. You must build interfaces to interact with the following endpoints:
-1. **Auth:** `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`
-2. **User:** `GET /api/users/me`
-3. **Exercises:** `POST /api/exercises`, `GET /api/exercises`
-4. **Workout Logs:** `POST /api/exercises/logs`, `GET /api/exercises/logs?exerciseId=...`
-5. **1RM Goals:** `POST /api/one-rep-max`, `GET /api/one-rep-max`, `PATCH /api/one-rep-max/[exerciseId]`
-6. **Visits:** `GET /api/visits/last`
-7. **Progression:** `GET /api/progression?timeframe=30d`
+## 2. Data Fetching Rules
+* **Centralized API Only:** NEVER write raw `fetch()` calls or use Axios directly inside components. You must exclusively import and use the custom wrapper from `src/utils/api.ts` so the JWT `Authorization` header is automatically applied.
 
-## 5. State Management & Auth Flow Rules
-- **API Client:** Create a centralized `api.ts` utility file. It must intercept fetch requests to automatically attach the `accessToken` via the `Authorization: Bearer <token>` header.
-- **Token Storage:** Store the `accessToken` in memory or `localStorage`. 
-- **Auth Context:** Create an `AuthContext.tsx` to wrap the app and provide the current user's state (`user`, `isAuthenticated`, `login()`, `logout()`).
+## 3. Styling Mandate
+* **Tailwind ONLY:** Use Tailwind CSS utility classes for all styling. 
+* **Anti-Pattern:** You are strictly forbidden from writing inline styles (`style={{...}}`) or creating custom `.css` modules unless explicitly told to do so for a highly specific animation.
 
-## 6. Phased Scaffolding Protocol
-Execute tasks in strict phases.
+## 4. Agent Feedback Loop
+If you ever encounter a file structure that surprises you, a component that feels overly complex, or an API response that doesn't match your expectations, **stop and alert the developer**. Indicate the confusion in your response so the developer can refactor the codebase or update this file, rather than you trying to silently hack around a bad architecture.
 
-**Phase 1: Skeleton Scaffolding**
-- Create the folder structure: `src/context`, `src/utils`, `src/pages`, `src/components`.
-- Create `src/utils/api.ts` with the empty fetch wrapper signatures.
-- Create empty Page components (e.g., `Dashboard.tsx`, `Login.tsx`, `Exercises.tsx`) that just return `<div>Page Name</div>`.
-- Set up `App.tsx` with React Router connecting to these empty pages.
-
-**Phase 2: Implementation**
-- Only proceed to write the internal form logic, fetch calls, and state mapping when the user explicitly says "Proceed to Phase 2 for [Component/Module]".
+## 5. Development State & Phased Execution
+* This is a greenfield project. You are free to aggressively refactor component names and file locations if it improves the Feature-Driven Architecture.
+* Always wait for the user to explicitly say "Proceed to Phase 2" before writing complex implementations or long files.

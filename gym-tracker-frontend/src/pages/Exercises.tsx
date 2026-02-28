@@ -1,7 +1,5 @@
-import React from 'react'
+import { TrainingScreen } from '../features/training/components/TrainingScreen'
 
-const Exercises: React.FC = () => {
-  return <div>Exercises Page</div>
+export default function Exercises() {
+  return <TrainingScreen />
 }
-
-export default Exercises

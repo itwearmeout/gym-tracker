@@ -1,53 +1,76 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { apiFetch } from '../../../utils/api'
-
-interface AuthContextType {
-  user: any
-  isAuthenticated: boolean
-  login: (credentials: Record<string, any>) => Promise<void>
-  register: (credentials: Record<string, any>) => Promise<void>
-  logout: () => void
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+import {
+  useEffect,
+  useState,
+  type ReactNode,
+} from 'react'
+import { getMe, login as loginRequest, logout as logoutRequest, register as registerRequest } from '../api/authApi'
+import type { AuthCredentials, UserProfile } from '../types'
+import { ApiError, clearTokens, getRefreshToken, setTokens } from '../../../utils/api'
+import { AuthStateContext, type AuthContextType } from './AuthStateContext'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<UserProfile | null>(null)
+  const [isBootstrapping, setIsBootstrapping] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 
-  const login = async (credentials: Record<string, any>) => {
-    const data = await apiFetch('/api/auth/login', { method: 'POST', body: credentials as unknown as BodyInit })
-    localStorage.setItem('accessToken', data.tokens.accessToken)
-    
+  useEffect(() => {
+    async function bootstrapSession(): Promise<void> {
+      try {
+        const me = await getMe()
+        setUser(me.user)
+        setIsAuthenticated(true)
+      } catch {
+        clearTokens()
+        setUser(null)
+        setIsAuthenticated(false)
+      } finally {
+        setIsBootstrapping(false)
+      }
+    }
+
+    bootstrapSession()
+  }, [])
+
+  const login = async (credentials: AuthCredentials): Promise<void> => {
+    const data = await loginRequest(credentials)
+    setTokens(data.tokens)
     setUser({ id: data.userId, email: data.email })
-    
     setIsAuthenticated(true)
   }
 
-  const register = async (credentials: Record<string, any>) => {
-    const data = await apiFetch('/api/auth/register', { method: 'POST', body: credentials as unknown as BodyInit })
-    localStorage.setItem('accessToken', data.tokens.accessToken)
-    
+  const register = async (credentials: AuthCredentials): Promise<void> => {
+    const data = await registerRequest(credentials)
+    setTokens(data.tokens)
     setUser({ id: data.userId, email: data.email })
-    
     setIsAuthenticated(true)
   }
 
-  const logout = () => {
-    localStorage.removeItem('accessToken')
+  const logout = async (): Promise<void> => {
+    const refreshToken = getRefreshToken()
+
+    if (refreshToken) {
+      try {
+        await logoutRequest(refreshToken)
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 401) {
+          throw error
+        }
+      }
+    }
+
+    clearTokens()
     setUser(null)
     setIsAuthenticated(false)
   }
 
-  const contextValue: AuthContextType = { user, isAuthenticated, login, register, logout }
-
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-}
-
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
+  const contextValue: AuthContextType = {
+    user,
+    isAuthenticated,
+    isBootstrapping,
+    login,
+    register,
+    logout,
   }
-  return context
+
+  return <AuthStateContext.Provider value={contextValue}>{children}</AuthStateContext.Provider>
 }
