@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { apiFetch } from '../utils/api'
+import { apiFetch } from '../../../utils/api'
 
 interface AuthContextType {
   user: any
